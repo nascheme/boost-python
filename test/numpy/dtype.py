@@ -15,7 +15,7 @@ if (sys.version_info.major >= 3):
 class DtypeTestCase(unittest.TestCase):
     
     def assertEquivalent(self, a, b):
-        return self.assert_(dtype_ext.equivalent(a, b), "%r is not equivalent to %r")
+        return self.assertTrue(dtype_ext.equivalent(a, b), "%r is not equivalent to %r")
 
     def testIntegers(self):
         for bits in (8, 16, 32, 64):

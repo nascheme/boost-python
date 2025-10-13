@@ -57,7 +57,7 @@ class PolymorphTest(unittest.TestCase):
       self.assertEqual ('X.f() -> A::f()', x.f())
       
       # This one properly raises the "dangling reference" exception
-      # self.failUnlessEqual ('X.f() -> A::f()', call_f(x))
+      # self.assertEqual ('X.f() -> A::f()', call_f(x))
 
    def test_wrapper_downcast(self):
       a = pass_a(D())
