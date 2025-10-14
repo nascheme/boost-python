@@ -11,6 +11,7 @@
 
 #include <boost/python/handle.hpp>
 #include <boost/python/detail/raw_pyobject.hpp>
+#include <boost/python/detail/pymutex.hpp>
 #include <boost/python/cast.hpp>
 
 #include <vector>
@@ -143,8 +144,21 @@ namespace
   typedef std::vector<rvalue_from_python_chain const*> visited_t;
   static visited_t visited;
 
+#ifdef Py_GIL_DISABLED
+  // Mutex to protect visited vector in free-threaded Python
+  detail::pymutex& visited_mutex()
+  {
+      static detail::pymutex mutex;
+      return mutex;
+  }
+#endif
+
   inline bool visit(rvalue_from_python_chain const* chain)
   {
+#ifdef Py_GIL_DISABLED
+      detail::pymutex_guard lock(visited_mutex());
+#endif
+
       visited_t::iterator const p = std::lower_bound(visited.begin(), visited.end(), chain);
       if (p != visited.end() && *p == chain)
           return false;
@@ -160,6 +174,10 @@ namespace
       
       ~unvisit()
       {
+#ifdef Py_GIL_DISABLED
+          detail::pymutex_guard lock(visited_mutex());
+#endif
+
           visited_t::iterator const p = std::lower_bound(visited.begin(), visited.end(), chain);
           assert(p != visited.end());
           visited.erase(p);
