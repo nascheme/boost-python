@@ -5,6 +5,7 @@
 
 #include <boost/python/type_id.hpp>
 #include <boost/python/detail/decorated_type_id.hpp>
+#include <boost/python/detail/pymutex.hpp>
 #include <utility>
 #include <vector>
 #include <algorithm>
@@ -81,17 +82,29 @@ namespace
   {
       free_mem(char*p)
           : p(p) {}
-    
+
       ~free_mem()
       {
           std::free(p);
       }
       char* p;
   };
+
+#ifdef Py_GIL_DISABLED
+  // Mutex to protect demangling cache and test flags in free-threaded Python
+  python::detail::pymutex& demangle_mutex()
+  {
+      static python::detail::pymutex mutex;
+      return mutex;
+  }
+#endif
 }
 
 bool cxxabi_cxa_demangle_is_broken()
 {
+#ifdef Py_GIL_DISABLED
+    python::detail::pymutex_guard lock(demangle_mutex());
+#endif
     static bool was_tested = false;
     static bool is_broken = false;
     if (!was_tested) {
@@ -109,6 +122,10 @@ namespace detail
 {
   BOOST_PYTHON_DECL char const* gcc_demangle(char const* mangled)
   {
+#ifdef Py_GIL_DISABLED
+      pymutex_guard lock(demangle_mutex());
+#endif
+
       typedef std::vector<
           std::pair<char const*, char const*>
       > mangling_map;
