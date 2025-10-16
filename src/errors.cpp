@@ -10,8 +10,20 @@
 #include <boost/python/errors.hpp>
 #include <boost/cast.hpp>
 #include <boost/python/detail/exception_handler.hpp>
+#include <boost/python/detail/pymutex.hpp>
 
 namespace boost { namespace python {
+
+#ifdef Py_GIL_DISABLED
+namespace detail {
+    // Mutex to protect exception handler chain in free-threaded Python
+    pymutex& exception_handler_mutex()
+    {
+        static pymutex mutex;
+        return mutex;
+    }
+}
+#endif
 
 error_already_set::~error_already_set() {}
 
@@ -20,8 +32,15 @@ BOOST_PYTHON_DECL bool handle_exception_impl(function0<void> f)
 {
     try
     {
-        if (detail::exception_handler::chain)
-            return detail::exception_handler::chain->handle(f);
+        detail::exception_handler* handler_chain = nullptr;
+        {
+#ifdef Py_GIL_DISABLED
+            detail::pymutex_guard lock(detail::exception_handler_mutex());
+#endif
+            handler_chain = detail::exception_handler::chain;
+        }
+        if (handler_chain)
+            return handler_chain->handle(f);
         f();
         return false;
     }
@@ -80,6 +99,9 @@ exception_handler::exception_handler(handler_function const& impl)
     : m_impl(impl)
     , m_next(0)
 {
+#ifdef Py_GIL_DISABLED
+    pymutex_guard lock(exception_handler_mutex());
+#endif
     if (chain != 0)
         tail->m_next = this;
     else
