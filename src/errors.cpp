@@ -16,8 +16,8 @@ namespace boost { namespace python {
 
 #ifdef Py_GIL_DISABLED
 namespace detail {
-    // Mutex to protect exception handler chain in free-threaded Python
-    pymutex& exception_handler_mutex()
+    // Global mutex for protecting all Boost.Python internal state
+    pymutex& get_global_mutex()
     {
         static pymutex mutex;
         return mutex;
@@ -34,9 +34,7 @@ BOOST_PYTHON_DECL bool handle_exception_impl(function0<void> f)
     {
         detail::exception_handler* handler_chain = nullptr;
         {
-#ifdef Py_GIL_DISABLED
-            detail::pymutex_guard lock(detail::exception_handler_mutex());
-#endif
+            BOOST_PYTHON_LOCK_STATE();
             handler_chain = detail::exception_handler::chain;
         }
         if (handler_chain)
@@ -99,9 +97,7 @@ exception_handler::exception_handler(handler_function const& impl)
     : m_impl(impl)
     , m_next(0)
 {
-#ifdef Py_GIL_DISABLED
-    pymutex_guard lock(exception_handler_mutex());
-#endif
+    BOOST_PYTHON_LOCK_STATE();
     if (chain != 0)
         tail->m_next = this;
     else

@@ -389,20 +389,9 @@ namespace
       return x;
   }
 
-#ifdef Py_GIL_DISABLED
-  // Mutex to protect inheritance graph and type index in free-threaded Python
-  python::detail::pymutex& inheritance_mutex()
-  {
-      static python::detail::pymutex mutex;
-      return mutex;
-  }
-#endif
-
   inline void* convert_type(void* const p, class_id src_t, class_id dst_t, bool polymorphic)
   {
-#ifdef Py_GIL_DISABLED
-      python::detail::pymutex_guard lock(inheritance_mutex());
-#endif
+      BOOST_PYTHON_LOCK_STATE();
 
       // Quickly rule out unregistered types
       index_entry* src_p = seek_type(src_t);
@@ -466,9 +455,7 @@ BOOST_PYTHON_DECL void* find_static_type(void* p, class_id src_t, class_id dst_t
 BOOST_PYTHON_DECL void add_cast(
     class_id src_t, class_id dst_t, cast_function cast, bool is_downcast)
 {
-#ifdef Py_GIL_DISABLED
-    python::detail::pymutex_guard lock(inheritance_mutex());
-#endif
+    BOOST_PYTHON_LOCK_STATE();
 
     // adding an edge will invalidate any record of unreachability in
     // the cache.
@@ -508,9 +495,7 @@ BOOST_PYTHON_DECL void add_cast(
 BOOST_PYTHON_DECL void register_dynamic_id_aux(
     class_id static_id, dynamic_id_function get_dynamic_id)
 {
-#ifdef Py_GIL_DISABLED
-    python::detail::pymutex_guard lock(inheritance_mutex());
-#endif
+    BOOST_PYTHON_LOCK_STATE();
     tuples::get<kdynamic_id>(*demand_type(static_id)) = get_dynamic_id;
 }
 

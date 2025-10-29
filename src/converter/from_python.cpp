@@ -144,20 +144,9 @@ namespace
   typedef std::vector<rvalue_from_python_chain const*> visited_t;
   static visited_t visited;
 
-#ifdef Py_GIL_DISABLED
-  // Mutex to protect visited vector in free-threaded Python
-  detail::pymutex& visited_mutex()
-  {
-      static detail::pymutex mutex;
-      return mutex;
-  }
-#endif
-
   inline bool visit(rvalue_from_python_chain const* chain)
   {
-#ifdef Py_GIL_DISABLED
-      detail::pymutex_guard lock(visited_mutex());
-#endif
+      BOOST_PYTHON_LOCK_STATE();
 
       visited_t::iterator const p = std::lower_bound(visited.begin(), visited.end(), chain);
       if (p != visited.end() && *p == chain)
@@ -171,12 +160,10 @@ namespace
   {
       unvisit(rvalue_from_python_chain const* chain)
           : chain(chain) {}
-      
+
       ~unvisit()
       {
-#ifdef Py_GIL_DISABLED
-          detail::pymutex_guard lock(visited_mutex());
-#endif
+          BOOST_PYTHON_LOCK_STATE();
 
           visited_t::iterator const p = std::lower_bound(visited.begin(), visited.end(), chain);
           assert(p != visited.end());
