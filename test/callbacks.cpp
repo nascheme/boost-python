@@ -28,54 +28,54 @@ void apply_void_int(PyObject* f, int x)
     call<void>(f, x);
 }
 
-struct X
+struct X_callbacks
 {
-    explicit X(int x) : x(x), magic(7654321) { ++counter; }
-    X(X const& rhs) : x(rhs.x), magic(7654321) { ++counter; }
-    ~X() { BOOST_ASSERT(magic == 7654321); magic = 6666666; x = 9999; --counter; }
+    explicit X_callbacks(int x) : x(x), magic(7654321) { ++counter; }
+    X_callbacks(X_callbacks const& rhs) : x(rhs.x), magic(7654321) { ++counter; }
+    ~X_callbacks() { BOOST_ASSERT(magic == 7654321); magic = 6666666; x = 9999; --counter; }
 
     void set(int _x) { BOOST_ASSERT(magic == 7654321); this->x = _x; }
     int value() const { BOOST_ASSERT(magic == 7654321); return x; }
     static int count() { return counter; }
  private:
-    void operator=(X const&);
+    void operator=(X_callbacks const&);
  private:
     int x;
     long magic;
     static int counter;
 };
 
-X apply_X_X(PyObject* f, X x)
+X_callbacks apply_X_X(PyObject* f, X_callbacks x)
 {
-    return call<X>(f, x);
+    return call<X_callbacks>(f, x);
 }
 
-void apply_void_X_ref(PyObject* f, X& x)
+void apply_void_X_ref(PyObject* f, X_callbacks& x)
 {
     call<void>(f, boost::ref(x));
 }
 
-X& apply_X_ref_handle(PyObject* f, handle<> obj)
+X_callbacks& apply_X_ref_handle(PyObject* f, handle<> obj)
 {
-    return call<X&>(f, obj);
+    return call<X_callbacks&>(f, obj);
 }
 
-X* apply_X_ptr_handle_cref(PyObject* f, handle<> const& obj)
+X_callbacks* apply_X_ptr_handle_cref(PyObject* f, handle<> const& obj)
 {
-    return call<X*>(f, obj);
+    return call<X_callbacks*>(f, obj);
 }
 
-void apply_void_X_cref(PyObject* f, X const& x)
+void apply_void_X_cref(PyObject* f, X_callbacks const& x)
 {
     call<void>(f, boost::cref(x));
 }
 
-void apply_void_X_ptr(PyObject* f, X* x)
+void apply_void_X_ptr(PyObject* f, X_callbacks* x)
 {
     call<void>(f, ptr(x));
 }
 
-void apply_void_X_deep_ptr(PyObject* f, X* x)
+void apply_void_X_deep_ptr(PyObject* f, X_callbacks* x)
 {
     call<void>(f, x);
 }
@@ -112,7 +112,7 @@ object apply_object_object(PyObject* f, object x)
     return call<object>(f, x);
 }
 
-int X::counter;
+int X_callbacks::counter;
 
 BOOST_PYTHON_MODULE(callbacks_ext)
 {
@@ -138,13 +138,13 @@ BOOST_PYTHON_MODULE(callbacks_ext)
     def("apply_to_string_literal", apply_to_string_literal);
         
     
-    class_<X>("X", init<int>())
-        .def(init<X const&>())
-        .def("value", &X::value)
-        .def("set", &X::set)
+    class_<X_callbacks>("X_callbacks", init<int>())
+        .def(init<X_callbacks const&>())
+        .def("value", &X_callbacks::value)
+        .def("set", &X_callbacks::set)
         ;
 
-    def("x_count", &X::count);
+    def("x_count", &X_callbacks::count);
 }
 
 #include "module_tail.cpp"

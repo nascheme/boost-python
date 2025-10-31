@@ -21,16 +21,16 @@ succeed<wink>:
 ... except ReferenceError: pass # expected
 ... else: print('expected an exception!')
 
->>> try: apply_X_ref_handle(lambda ignored:X(42), None)
+>>> try: apply_X_ref_handle(lambda ignored:X_callbacks(42), None)
 ... except ReferenceError: pass # expected
 ... else: print('expected an exception!')
 
->>> x = X(42)
->>> x.y = X(7)
+>>> x = X_callbacks(42)
+>>> x.y = X_callbacks(7)
 >>> apply_X_ref_handle(lambda z:z.y, x).value()
 7
 
->>> x = apply_X_X(identity, X(42))
+>>> x = apply_X_X(identity, X_callbacks(42))
 >>> x.value()
 42
 >>> x_count()
@@ -42,7 +42,7 @@ succeed<wink>:
 >>> def increment(x):
 ...     x.set(x.value() + 1)
 ...
->>> x = X(42)
+>>> x = X_callbacks(42)
 >>> apply_void_X_ref(increment, x)
 >>> x.value()
 43
@@ -100,7 +100,7 @@ succeed<wink>:
 >>> y
 
 >>> def new_x(ignored):
-...     return X(666)
+...     return X_callbacks(666)
 ...
 >>> try: apply_X_ref_handle(new_x, 1)
 ... except ReferenceError: pass
