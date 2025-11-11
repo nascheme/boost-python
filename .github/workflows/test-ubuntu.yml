@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: [python, python3]
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.14t']
         cxx: [g++, clang++]
         std: [c++11, c++14, c++17]
         include:
@@ -27,17 +27,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v5
-
+    - name: setup python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
     - name: setup prerequisites
       run: |
-        # Warning: this is not necessarily the same Python version as the one configured above !
-        python3 -m pip install -U faber --break-system-packages
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -U faber
     - name: build
       run: |
-        ${{ matrix.python }} --version
+        python3 --version
         ${{ matrix.cxx }} --version
         faber -v
-        sed -e "s/\$PYTHON/${{ matrix.python }}/g" .ci/faber > ~/.faber
+        sed -e "s/\$PYTHON/python3/g" .ci/faber > ~/.faber
         faber \
           --with-boost-include=${BOOST_PY_DEPS} \
           --builddir=build \
